@@ -98,7 +98,7 @@ while cap.isOpened():
                 confirm_frames = 5
 
                 if dist_between(ox, oy, px, py) > 200:
-                    direction = get_direction()
+                    direction = get_direction(ox, oy, px, py)
 
                     if direction == "r":
                         subprocess.run(["swaymsg", "workspace", "prev"])
