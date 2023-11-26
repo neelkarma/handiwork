@@ -10,6 +10,11 @@ def fraction_to_pixels(mat, x, y):
     return x * width, y * height
 
 
+def pixels_to_fraction(mat, x, y):
+    height, width = mat.shape[:2]
+    return x / width, y / height
+
+
 def point_average(*points):
     return (
         sum(point.x for point in points) / len(points),
