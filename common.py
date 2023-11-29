@@ -22,14 +22,22 @@ def point_average(*points):
     )
 
 
+def dist_between_squared(x1, y1, x2, y2):
+    return (y2 - y1) ** 2 + (x2 - x1) ** 2
+
+
 def dist_between(x1, y1, x2, y2):
-    return math.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2)
+    return math.sqrt(dist_between_squared(x1, y1, x2, y2))
 
 
 def is_pinch(landmarks):
     index = landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
     thumb = landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
-    return dist_between(thumb.x, thumb.y, index.x, index.y) <= 0.04
+    wrist = landmarks.landmark[mp_hands.HandLandmark.WRIST]
+
+    thumb_to_index = dist_between_squared(thumb.x, thumb.y, index.x, index.y)
+    thumb_to_wrist = dist_between_squared(thumb.x, thumb.y, wrist.x, wrist.y)
+    return thumb_to_index / thumb_to_wrist <= 0.05
 
 
 def get_pinch_pointer(landmarks):
