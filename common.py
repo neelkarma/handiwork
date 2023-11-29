@@ -27,10 +27,16 @@ def is_pinch(landmarks):
     index = landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
     thumb = landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
     wrist = landmarks.landmark[mp_hands.HandLandmark.WRIST]
+    middle = landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_TIP]
 
     thumb_to_index = dist_between_squared(thumb.x, thumb.y, index.x, index.y)
     thumb_to_wrist = dist_between_squared(thumb.x, thumb.y, wrist.x, wrist.y)
-    return thumb_to_index / thumb_to_wrist <= 0.05
+    thumb_to_middle = dist_between_squared(thumb.x, thumb.y, middle.x, middle.y)
+
+    return (
+        thumb_to_index / thumb_to_wrist <= 0.05
+        and thumb_to_index / thumb_to_middle <= 0.3
+    )
 
 
 def get_pinch_pointer(landmarks):
