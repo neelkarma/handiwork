@@ -1,16 +1,14 @@
-import math
-import subprocess
-
 import cv2
 import mediapipe as mp
 
-from common import (
+from common.hands import (
     dist_between,
     fraction_to_pixels,
     get_pinch_pointer,
     is_pinch,
     pixels_to_fraction,
 )
+from common.volume import get_volume, set_volume
 
 mp_hands = mp.solutions.hands
 
@@ -73,18 +71,6 @@ class Slider:
             (0, 0, 255) if self.is_active else (255, 0, 0),
             -1,
         )
-
-
-def set_volume(value):
-    subprocess.run(["pamixer", "--set-volume", str(int(value * 100))])
-
-
-def get_volume():
-    return int(
-        subprocess.run(
-            ["pamixer", "--get-volume"], capture_output=True, text=True
-        ).stdout.strip("\n")
-    )
 
 
 # Initialize OpenCV

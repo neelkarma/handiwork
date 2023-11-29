@@ -1,7 +1,16 @@
+"""
+DRAW
+----
+
+Pinch your index finger and thumb together to start drawing, and move your hand to draw on the screen.
+
+Press 'r' to reset.
+"""
+
 import cv2
 import mediapipe as mp
 
-from common import fraction_to_pixels, get_pinch_pointer, is_pinch
+from common.hands import fraction_to_pixels, get_pinch_pointer, is_pinch
 
 mp_hands = mp.solutions.hands
 
@@ -43,6 +52,7 @@ while cap.isOpened():
                 was_drawing = False
                 drawing.append([])
 
+    # draw the strokes
     for stroke in drawing:
         for i in range(1, len(stroke)):
             x1, y1 = stroke[i - 1]
@@ -52,12 +62,10 @@ while cap.isOpened():
     # Display the resulting frame
     cv2.imshow("handiwork", frame)
 
+    # handle keyboard input
     key = cv2.waitKey(1)
-    # reset canvas is 'r' is pressed
     if key & 0xFF == ord("r"):
         drawing = [[]]
-
-    # Break the loop if 'q' is pressed
     if key & 0xFF == ord("q"):
         break
 

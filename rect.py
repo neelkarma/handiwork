@@ -1,7 +1,16 @@
+"""
+RECTANGLES
+----------
+
+Pinch your index finger and thumb with both hands at the same point to start drawing a rectangle, and drag them outwards to expand it.
+
+Press 'r' to reset.
+"""
+
 import cv2
 import mediapipe as mp
 
-from common import dist_between, fraction_to_pixels, get_pinch_pointer, is_pinch
+from common.hands import dist_between, fraction_to_pixels, get_pinch_pointer, is_pinch
 
 mp_hands = mp.solutions.hands
 

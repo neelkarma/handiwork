@@ -1,12 +1,28 @@
+"""
+ACTIONS
+-------
+
+Pinch your index finger and thumb together to start a gesture, and drag your hand in a direction to perform an action.
+
+Note: The actions performed only work if being run in the Sway WM, on Linux. Feel free to modify the code (specifically the ACTIONS constant) to suit your needs.
+"""
+
 import math
 import subprocess
 
 import cv2
 import mediapipe as mp
 
-from common import dist_between, fraction_to_pixels, get_pinch_pointer, is_pinch
+from common.hands import dist_between, fraction_to_pixels, get_pinch_pointer, is_pinch
 
 mp_hands = mp.solutions.hands
+
+ACTIONS = {
+    "r": ("prev desktop", lambda: subprocess.run(["swaymsg", "workspace", "prev"])),
+    "l": ("next desktop", lambda: subprocess.run(["swaymsg", "workspace", "next"])),
+    "d": ("hide all windows", lambda: subprocess.run(["swaymsg", "workspace", "11"])),
+    "u": ("exit", lambda: exit(0)),
+}
 
 
 hands = mp_hands.Hands(
@@ -63,15 +79,7 @@ while cap.isOpened():
 
                 angle = math.atan2(py - oy, px - ox)
                 direction = get_direction(ox, oy, px, py)
-                action = None
-                if direction == "r":
-                    action = "left desktop"
-                elif direction == "l":
-                    action = "right desktop"
-                elif direction == "d":
-                    action = "hide all windows"
-                else:
-                    action = "close"
+                action = ACTIONS[direction][0]
 
                 cv2.putText(
                     frame, action, (10, 50), cv2.FONT_HERSHEY_DUPLEX, 1, (255, 0, 0), 2
@@ -100,15 +108,7 @@ while cap.isOpened():
                 if dist_between(ox, oy, px, py) > 200:
                     direction = get_direction(ox, oy, px, py)
 
-                    if direction == "r":
-                        subprocess.run(["swaymsg", "workspace", "prev"])
-                    elif direction == "l":
-                        subprocess.run(["swaymsg", "workspace", "next"])
-                    elif direction == "d":
-                        subprocess.run(["swaymsg", "workspace", "11"])
-                    else:
-                        is_exit = True
-
+                    ACTIONS[direction][1]()
                     print(direction)
 
                     gesture_origin = None
