@@ -1,3 +1,12 @@
+"""
+SLIDER
+------
+
+Pinch and drag the slider handle to change the volume.
+
+Note: This script requires that PulseAudio and `pamixer` is installed. You can change what the slider does by modifying the `callback` argument in the Slider constructor.
+"""
+
 import cv2
 import mediapipe as mp
 

@@ -14,14 +14,14 @@ mp_hands = mp.solutions.hands
 
 
 hands = mp_hands.Hands(
-    max_num_hands=1, min_detection_confidence=0.7, min_tracking_confidence=0.7
+    max_num_hands=2, min_detection_confidence=0.7, min_tracking_confidence=0.7
 )
 
 
 def finger_is_up(bot, mid_bot, mid_top, top):
     bot_to_mid = math.atan2(mid_bot.y - bot.y, mid_bot.x - bot.x)
     mid_to_tip = math.atan2(top.y - mid_top.y, top.x - mid_top.x)
-    return abs(bot_to_mid - mid_to_tip) < math.pi / 2
+    return abs(bot_to_mid - mid_to_tip) < math.pi / 4
 
 
 # Initialize OpenCV
@@ -41,12 +41,11 @@ while cap.isOpened():
     results = hands.process(rgb_frame)
 
     if results.multi_hand_landmarks:
-        for landmarks in results.multi_hand_landmarks:
+        total = 0
+        for hand, landmarks in enumerate(results.multi_hand_landmarks):
             # Draw hand landmarks on the image
             mp_drawing = mp.solutions.drawing_utils
             mp_drawing.draw_landmarks(frame, landmarks, mp_hands.HAND_CONNECTIONS)
-
-            total = 0
 
             for i, points in enumerate(
                 [
@@ -73,11 +72,17 @@ while cap.isOpened():
                 ]
             ):
                 if finger_is_up(*points):
-                    total += 2**i
+                    total += 2 ** (i + hand * 5)
 
-            cv2.putText(
-                frame, str(total), (10, 50), cv2.FONT_HERSHEY_DUPLEX, 1, (255, 0, 0), 2
-            )
+        cv2.putText(
+            frame,
+            f"{bin(total)} = {total}",
+            (10, 50),
+            cv2.FONT_HERSHEY_DUPLEX,
+            1,
+            (255, 0, 0),
+            2,
+        )
 
     # Display the resulting frame
     cv2.imshow("handiwork", frame)

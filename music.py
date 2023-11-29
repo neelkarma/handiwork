@@ -7,7 +7,11 @@ Tap your index finger and thumb together:
 - Twice to skip to the next song
 - Three times to skip to the previous song
 
-Note: This script uses the `dbus-python` library, which is only available on Linux, and right now it only works with the Spotify desktop app. Feel free to modify the code to suit your needs.
+Note: This script requires that:
+- You are listening to music on Spotify Desktop
+- You are on Linux
+- You have the `dbus-python` package installed
+- You have `pamixer` installed
 """
 
 import time
@@ -23,7 +27,7 @@ mp_hands = mp.solutions.hands
 
 TAP_DELAY_SECONDS = 0.4
 VOLUME_SENSITIVITY = 0.3
-START_VOLUME_ADJUST_DIST = 200
+START_VOLUME_ADJUST_DIST = 50
 
 
 hands = mp_hands.Hands(
@@ -73,15 +77,15 @@ while cap.isOpened():
                     gesture_origin = pointer
                     num_taps += 1
                     last_tap = time.time()
-                elif dist_between(
-                    *pointer, *gesture_origin
-                ) > START_VOLUME_ADJUST_DIST or time.time() > TAP_DELAY_SECONDS + (
-                    last_tap or time.time()
+                elif (
+                    not is_dragging
+                    and dist_between(*pointer, *gesture_origin)
+                    > START_VOLUME_ADJUST_DIST
+                    or time.time() > TAP_DELAY_SECONDS + (last_tap or time.time())
                 ):
                     is_dragging = True
                     last_tap = None
                     num_taps = 0
-                    print("hit")
                     original_volume = get_volume()
 
                 if is_dragging:
