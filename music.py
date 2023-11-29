@@ -16,13 +16,7 @@ import cv2
 import dbus
 import mediapipe as mp
 
-from common.hands import (
-    dist_between,
-    dist_between_squared,
-    fraction_to_pixels,
-    get_pinch_pointer,
-    is_pinch,
-)
+from common.hands import dist_between, fraction_to_pixels, get_pinch_pointer, is_pinch
 from common.volume import get_volume, set_volume
 
 mp_hands = mp.solutions.hands
