@@ -10,18 +10,14 @@ import math
 import cv2
 import mediapipe as mp
 
+from common.hands import fingers_are_up
+
 mp_hands = mp.solutions.hands
 
 
 hands = mp_hands.Hands(
     max_num_hands=2, min_detection_confidence=0.7, min_tracking_confidence=0.7
 )
-
-
-def finger_is_up(bot, mid_bot, mid_top, top):
-    bot_to_mid = math.atan2(mid_bot.y - bot.y, mid_bot.x - bot.x)
-    mid_to_tip = math.atan2(top.y - mid_top.y, top.x - mid_top.x)
-    return abs(bot_to_mid - mid_to_tip) < math.pi / 4
 
 
 # Initialize OpenCV
@@ -47,31 +43,8 @@ while cap.isOpened():
             mp_drawing = mp.solutions.drawing_utils
             mp_drawing.draw_landmarks(frame, landmarks, mp_hands.HAND_CONNECTIONS)
 
-            for i, points in enumerate(
-                [
-                    landmarks.landmark[
-                        mp_hands.HandLandmark.THUMB_CMC : mp_hands.HandLandmark.THUMB_TIP
-                        + 1
-                    ],
-                    landmarks.landmark[
-                        mp_hands.HandLandmark.INDEX_FINGER_MCP : mp_hands.HandLandmark.INDEX_FINGER_TIP
-                        + 1
-                    ],
-                    landmarks.landmark[
-                        mp_hands.HandLandmark.MIDDLE_FINGER_MCP : mp_hands.HandLandmark.MIDDLE_FINGER_TIP
-                        + 1
-                    ],
-                    landmarks.landmark[
-                        mp_hands.HandLandmark.RING_FINGER_MCP : mp_hands.HandLandmark.RING_FINGER_TIP
-                        + 1
-                    ],
-                    landmarks.landmark[
-                        mp_hands.HandLandmark.PINKY_MCP : mp_hands.HandLandmark.PINKY_TIP
-                        + 1
-                    ],
-                ]
-            ):
-                if finger_is_up(*points):
+            for i, is_up in enumerate(fingers_are_up(landmarks)):
+                if is_up:
                     total += 2 ** (i + hand * 5)
 
         cv2.putText(

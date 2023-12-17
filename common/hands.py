@@ -43,3 +43,39 @@ def get_pinch_pointer(landmarks):
     index = landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
     thumb = landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
     return (index.x + thumb.x) / 2, (index.y + thumb.y) / 2
+
+
+def finger_is_up(bot, mid_bot, mid_top, top):
+    bot_to_mid = math.atan2(mid_bot.y - bot.y, mid_bot.x - bot.x)
+    mid_to_tip = math.atan2(top.y - mid_top.y, top.x - mid_top.x)
+    return abs(bot_to_mid - mid_to_tip) < math.pi / 4
+
+
+def fingers_are_up(landmarks):
+    return list(
+        map(
+            lambda finger: finger_is_up(*finger),
+            [
+                landmarks.landmark[
+                    mp_hands.HandLandmark.THUMB_CMC : mp_hands.HandLandmark.THUMB_TIP
+                    + 1
+                ],
+                landmarks.landmark[
+                    mp_hands.HandLandmark.INDEX_FINGER_MCP : mp_hands.HandLandmark.INDEX_FINGER_TIP
+                    + 1
+                ],
+                landmarks.landmark[
+                    mp_hands.HandLandmark.MIDDLE_FINGER_MCP : mp_hands.HandLandmark.MIDDLE_FINGER_TIP
+                    + 1
+                ],
+                landmarks.landmark[
+                    mp_hands.HandLandmark.RING_FINGER_MCP : mp_hands.HandLandmark.RING_FINGER_TIP
+                    + 1
+                ],
+                landmarks.landmark[
+                    mp_hands.HandLandmark.PINKY_MCP : mp_hands.HandLandmark.PINKY_TIP
+                    + 1
+                ],
+            ],
+        )
+    )
