@@ -146,10 +146,12 @@ while cap.isOpened():
                 menu_origin[1] - i * 60 - 32 + menu_animation_frame * 4,
             )
 
-            cv2.circle(frame, (int(x), int(y)), 25, (0, 0, 255), -1)
+            cv2.circle(frame, (int(x), int(y)), 25, (0, 0, 0), -1)
+            cv2.circle(frame, (int(x), int(y)), 20, (255, 255, 255), -1)
             if menu_cursor is not None:
                 if dist_between(x, y, menu_cursor[0], menu_cursor[1]) < 30:
-                    cv2.circle(frame, (int(x), int(y)), 25, (0, 255, 0), -1)
+                    cv2.circle(frame, (int(x), int(y)), 25, (255, 255, 255), -1)
+                    cv2.circle(frame, (int(x), int(y)), 20, (88, 178, 248), -1)
 
     mp_drawing = mp.solutions.drawing_utils
     mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)

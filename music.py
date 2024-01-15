@@ -8,16 +8,14 @@ Tap your index finger and thumb together:
 - Three times to skip to the previous song
 
 Note: This script requires that:
-- You are listening to music on Spotify Desktop
 - You are on Linux
-- You have the `dbus-python` package installed
-- You have `pamixer` installed
+- You have `pamixer` and `playerctl` installed
 """
 
 import time
 
 import cv2
-import dbus
+import subprocess
 import mediapipe as mp
 
 from common.hands import dist_between, fraction_to_pixels, get_pinch_pointer, is_pinch
@@ -42,13 +40,6 @@ is_dragging = False
 original_volume = None
 num_taps = 0
 last_tap = None
-
-# initialise dbus
-session = dbus.SessionBus()
-spotify = session.get_object(
-    "org.mpris.MediaPlayer2.spotify", "/org/mpris/MediaPlayer2"
-)
-player = dbus.Interface(spotify, "org.mpris.MediaPlayer2.Player")
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -99,13 +90,13 @@ while cap.isOpened():
         if time.time() > TAP_DELAY_SECONDS + last_tap or num_taps >= 3:
             if num_taps == 1:
                 print("play/pause")
-                player.PlayPause()
+                subprocess.run(["playerctl", "play-pause"])
             elif num_taps == 2:
                 print("next")
-                player.Next()
+                subprocess.run(["playerctl", "next"])
             elif num_taps == 3:
                 print("prev")
-                player.Previous()
+                subprocess.run(["playerctl", "previous"])
 
             num_taps = 0
             last_tap = None
