@@ -38,6 +38,8 @@ def is_pinch(landmarks):
         and thumb_to_index / thumb_to_middle <= 0.3
     )
 
+def atan2(p1, p2):
+    return math.atan2(p2.y - p1.y, p2.x - p1.x)
 
 def get_pinch_pointer(landmarks):
     index = landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
@@ -46,8 +48,8 @@ def get_pinch_pointer(landmarks):
 
 
 def finger_is_up(bot, mid_bot, mid_top, top):
-    bot_to_mid = math.atan2(mid_bot.y - bot.y, mid_bot.x - bot.x)
-    mid_to_tip = math.atan2(top.y - mid_top.y, top.x - mid_top.x)
+    bot_to_mid = atan2(bot, mid_bot)
+    mid_to_tip = atan2(mid_top, top)
     return abs(bot_to_mid - mid_to_tip) < math.pi / 4
 
 
