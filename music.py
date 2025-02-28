@@ -7,6 +7,8 @@ Tap your index finger and thumb together:
 - Twice to skip to the next song
 - Three times to skip to the previous song
 
+Hold your index finger and thumb together and drag up or down to adjust volume.
+
 Note: This script requires that:
 - You are on Linux
 - You have `pamixer` and `playerctl` installed
