@@ -11,11 +11,15 @@ import math
 import subprocess
 
 import cv2
-import mediapipe as mp
 
-from common.hands import dist_between, fraction_to_pixels, get_pinch_pointer, is_pinch
-
-mp_hands = mp.solutions.hands
+from common.hands import (
+    EasyHandLandmarker,
+    dist_between,
+    draw_landmarks,
+    fraction_to_pixels,
+    get_pinch_pointer,
+    is_pinch,
+)
 
 ACTIONS = {
     "r": ("prev desktop", lambda: subprocess.run(["swaymsg", "workspace", "prev"])),
@@ -23,11 +27,6 @@ ACTIONS = {
     "d": ("hide all windows", lambda: subprocess.run(["swaymsg", "workspace", "11"])),
     "u": ("exit", lambda: exit(0)),
 }
-
-
-hands = mp_hands.Hands(
-    max_num_hands=1, min_detection_confidence=0.7, min_tracking_confidence=0.7
-)
 
 
 def get_direction(ox, oy, px, py):
@@ -38,6 +37,7 @@ def get_direction(ox, oy, px, py):
 
 
 # Initialize OpenCV
+landmarker = EasyHandLandmarker(num_hands=1)
 cap = cv2.VideoCapture(2)  # Use 0 for the default camera
 gesture_origin = None
 last_pointer = None
@@ -51,19 +51,14 @@ while cap.isOpened():
         break
 
     frame = cv2.flip(frame, 1)
-
-    # Convert the BGR image to RGB
-    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    landmarker.process_frame(frame)
 
     # Process the frame with MediaPipe Hands
-    results = hands.process(rgb_frame)
+    results = landmarker.get_latest_result()
 
-    if results.multi_hand_landmarks:
-        for landmarks in results.multi_hand_landmarks:
-            # Draw hand landmarks on the image
-            mp_drawing = mp.solutions.drawing_utils
-            mp_drawing.draw_landmarks(frame, landmarks, mp_hands.HAND_CONNECTIONS)
-
+    if results:
+        draw_landmarks(frame, results)
+        for landmarks in results.hand_landmarks:
             if is_pinch(landmarks):
                 if was_triggered:
                     continue
@@ -117,8 +112,8 @@ while cap.isOpened():
                     continue
 
             elif gesture_origin is not None:
-                confirm_frames -= 1
-                if confirm_frames > 0:
+                confirm_frame -= 1
+                if confirm_frame > 0:
                     continue
 
                 print("cancel")
@@ -142,3 +137,4 @@ while cap.isOpened():
 # Release the VideoCapture and close all windows
 cap.release()
 cv2.destroyAllWindows()
+landmarker.close()

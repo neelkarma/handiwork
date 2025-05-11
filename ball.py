@@ -10,16 +10,15 @@ Tip: Modify the NUM_BALLS constant below :)
 import random
 
 import cv2
-import mediapipe as mp
 
 from common.hands import (
+    EasyHandLandmarker,
     dist_between_squared,
+    draw_landmarks,
     fraction_to_pixels,
     get_pinch_pointer,
     is_pinch,
 )
-
-mp_hands = mp.solutions.hands
 
 GRAVITY = 3
 BOUNCE_DAMPING = 0.3
@@ -29,9 +28,7 @@ BALL_RADIUS = 40
 NUM_BALLS = 1
 
 
-hands = mp_hands.Hands(
-    max_num_hands=1, min_detection_confidence=0.7, min_tracking_confidence=0.7
-)
+landmarker = EasyHandLandmarker(num_hands=1)
 
 
 class Ball:
@@ -48,13 +45,11 @@ class Ball:
         self.last_grab_y = 0
 
     def handle_hand(self, handmarks):
-        is_pinching = is_pinch(landmarks)
+        is_pinching = is_pinch(handmarks)
         pointer = get_pinch_pointer(handmarks)
         px, py = fraction_to_pixels(frame, *pointer)
         if is_pinching and not self.is_grabbing:
-            self.is_grabbing = (
-                dist_between_squared(px, py, self.x, self.y) <= self.r**2
-            )
+            self.is_grabbing = dist_between_squared(px, py, self.x, self.y) <= self.r**2
 
             if self.is_grabbing:
                 self.last_grab_x = px
@@ -124,20 +119,15 @@ while cap.isOpened():
 
     frame = cv2.flip(frame, 1)
 
-    # Convert the BGR image to RGB
-    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-    # Process the frame with MediaPipe Hands
-    results = hands.process(rgb_frame)
+    landmarker.process_frame(frame)
 
     for ball in balls:
         frame = ball.render(frame)
 
-    if results.multi_hand_landmarks:
-        for landmarks in results.multi_hand_landmarks:
-            # Draw hand landmarks on the image
-            mp_drawing = mp.solutions.drawing_utils
-            mp_drawing.draw_landmarks(frame, landmarks, mp_hands.HAND_CONNECTIONS)
+    results = landmarker.get_latest_result()
+    if results:
+        draw_landmarks(frame, results)
+        for landmarks in results.hand_landmarks:
             for ball in balls:
                 ball.handle_hand(landmarks)
 
@@ -154,3 +144,4 @@ while cap.isOpened():
 # Release the VideoCapture and close all windows
 cap.release()
 cv2.destroyAllWindows()
+landmarker.close()

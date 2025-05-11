@@ -10,15 +10,12 @@ import math
 import cv2
 import mediapipe as mp
 
-from common.hands import fingers_are_up
+from common.hands import EasyHandLandmarker, draw_landmarks, fingers_are_up
 
 mp_hands = mp.solutions.hands
 
 
-hands = mp_hands.Hands(
-    max_num_hands=2, min_detection_confidence=0.7, min_tracking_confidence=0.7
-)
-
+landmarker = EasyHandLandmarker()
 
 # Initialize OpenCV
 cap = cv2.VideoCapture(2)  # Use 0 for the default camera
@@ -30,22 +27,18 @@ while cap.isOpened():
 
     frame = cv2.flip(frame, 1)
 
-    # Convert the BGR image to RGB
-    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
     # Process the frame with MediaPipe Hands
-    results = hands.process(rgb_frame)
+    landmarker.process_frame(frame)
+    results = landmarker.get_latest_result()
 
-    if results.multi_hand_landmarks:
+    if results:
+        draw_landmarks(frame, results)
         total = 0
-        for hand, landmarks in enumerate(results.multi_hand_landmarks):
-            # Draw hand landmarks on the image
-            mp_drawing = mp.solutions.drawing_utils
-            mp_drawing.draw_landmarks(frame, landmarks, mp_hands.HAND_CONNECTIONS)
-
+        for hand, landmarks in enumerate(results.hand_landmarks):
             for i, is_up in enumerate(fingers_are_up(landmarks)):
+                total <<= 1
                 if is_up:
-                    total += 2 ** (i + hand * 5)
+                    total += 1
 
         cv2.putText(
             frame,
@@ -67,3 +60,4 @@ while cap.isOpened():
 # Release the VideoCapture and close all windows
 cap.release()
 cv2.destroyAllWindows()
+landmarker.close()

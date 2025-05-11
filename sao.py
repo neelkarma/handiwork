@@ -10,14 +10,22 @@ import math
 import cv2
 import mediapipe as mp
 
-from common.hands import dist_between, fingers_are_up, fraction_to_pixels
+from common.hands import (
+    EasyHandLandmarker,
+    dist_between,
+    draw_landmarks,
+    fingers_are_up,
+    fraction_to_pixels,
+)
+
+HandLandmark = mp.solutions.hands.HandLandmark
 
 LEFT_HANDED = False  # Change to True if using left hand.
 
 
 def is_initial_gesture(landmarks):
-    middle_mcp = landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_MCP]
-    wrist = landmarks.landmark[mp_hands.HandLandmark.WRIST]
+    middle_mcp = landmarks[HandLandmark.MIDDLE_FINGER_MCP]
+    wrist = landmarks[HandLandmark.WRIST]
     angle = math.atan2(wrist.y - middle_mcp.y, wrist.x - middle_mcp.x)
 
     required_fingers_are_up = fingers_are_up(landmarks)[1:] == [
@@ -35,46 +43,41 @@ def is_initial_gesture(landmarks):
 
 
 def is_final_gesture(landmarks):
-    index_tip = landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
-    index_mcp = landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_MCP]
-    middle_tip = landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_TIP]
-    middle_mcp = landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_MCP]
+    index_tip = landmarks[HandLandmark.INDEX_FINGER_TIP]
+    index_mcp = landmarks[HandLandmark.INDEX_FINGER_MCP]
+    middle_tip = landmarks[HandLandmark.MIDDLE_FINGER_TIP]
+    middle_mcp = landmarks[HandLandmark.MIDDLE_FINGER_MCP]
     return index_tip.y > index_mcp.y and middle_tip.y > middle_mcp.y
 
 
 def hand_fanned_right(landmarks):
-    index = landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
-    middle = landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_TIP]
-    ring = landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_TIP]
-    pinky = landmarks.landmark[mp_hands.HandLandmark.PINKY_TIP]
-    wrist = landmarks.landmark[mp_hands.HandLandmark.WRIST]
+    index = landmarks[HandLandmark.INDEX_FINGER_TIP]
+    middle = landmarks[HandLandmark.MIDDLE_FINGER_TIP]
+    ring = landmarks[HandLandmark.RING_FINGER_TIP]
+    pinky = landmarks[HandLandmark.PINKY_TIP]
+    wrist = landmarks[HandLandmark.WRIST]
 
     return all(point.x > wrist.x for point in [index, middle, ring, pinky])
 
 
 def hand_fanned_left(landmarks):
-    index = landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
-    middle = landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_TIP]
-    ring = landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_TIP]
-    pinky = landmarks.landmark[mp_hands.HandLandmark.PINKY_TIP]
-    wrist = landmarks.landmark[mp_hands.HandLandmark.WRIST]
+    index = landmarks[HandLandmark.INDEX_FINGER_TIP]
+    middle = landmarks[HandLandmark.MIDDLE_FINGER_TIP]
+    ring = landmarks[HandLandmark.RING_FINGER_TIP]
+    pinky = landmarks[HandLandmark.PINKY_TIP]
+    wrist = landmarks[HandLandmark.WRIST]
 
     return all(point.x < wrist.x for point in [index, middle, ring, pinky])
 
 
 def get_gesture_pointer(landmarks):
-    index = landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
-    # middle = landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_TIP]
+    index = landmarks[HandLandmark.INDEX_FINGER_TIP]
+    # middle = landmarks[HandLandmark.MIDDLE_FINGER_TIP]
     # return (index.x + middle.x) / 2, (index.y + middle.y) / 2
     return index.x, index.y
 
 
-mp_hands = mp.solutions.hands
-
-
-hands = mp_hands.Hands(
-    max_num_hands=1, min_detection_confidence=0.7, min_tracking_confidence=0.7
-)
+landmarker = EasyHandLandmarker()
 
 # Initialize OpenCV
 cap = cv2.VideoCapture(2)  # Use 0 for the default camera
@@ -91,19 +94,15 @@ while cap.isOpened():
 
     frame = cv2.flip(frame, 1)
 
-    # Convert the BGR image to RGB
-    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
     # Process the frame with MediaPipe Hands
-    results = hands.process(rgb_frame)
+    landmarker.process_frame(frame)
+    results = landmarker.get_latest_result()
 
     menu_cursor = None
-    hand_landmarks = None
 
-    if results.multi_hand_landmarks:
-        for landmarks in results.multi_hand_landmarks:
-            hand_landmarks = landmarks
-
+    if results:
+        draw_landmarks(frame, results)
+        for landmarks in results.hand_landmarks:
             if menu_origin is None:
                 if is_initial_gesture(landmarks):
                     gesture_frames = 3
@@ -123,7 +122,7 @@ while cap.isOpened():
                         menu_origin = fraction_to_pixels(frame, *menu_origin)
                         menu_delay_frames = None
             else:
-                index_tip = landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
+                index_tip = landmarks[HandLandmark.INDEX_FINGER_TIP]
                 menu_cursor = fraction_to_pixels(frame, index_tip.x, index_tip.y)
 
                 if (hand_fanned_left if LEFT_HANDED else hand_fanned_right)(landmarks):
@@ -153,9 +152,6 @@ while cap.isOpened():
                     cv2.circle(frame, (int(x), int(y)), 25, (255, 255, 255), -1)
                     cv2.circle(frame, (int(x), int(y)), 20, (88, 178, 248), -1)
 
-    mp_drawing = mp.solutions.drawing_utils
-    mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-    # Display the resulting frame
     cv2.imshow("handiwork", frame)
 
     # handle keyboard input

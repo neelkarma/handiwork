@@ -8,16 +8,17 @@ Press 'r' to reset.
 """
 
 import cv2
-import mediapipe as mp
 
-from common.hands import dist_between, fraction_to_pixels, get_pinch_pointer, is_pinch
-
-mp_hands = mp.solutions.hands
-
-
-hands = mp_hands.Hands(
-    max_num_hands=2, min_detection_confidence=0.7, min_tracking_confidence=0.7
+from common.hands import (
+    EasyHandLandmarker,
+    dist_between,
+    draw_landmarks,
+    fraction_to_pixels,
+    get_pinch_pointer,
+    is_pinch,
 )
+
+landmarker = EasyHandLandmarker(num_hands=2)
 
 # Initialize OpenCV
 cap = cv2.VideoCapture(2)
@@ -32,19 +33,14 @@ while cap.isOpened():
 
     frame = cv2.flip(frame, 1)
 
-    # Convert the BGR image to RGB
-    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
     # Process the frame with MediaPipe Hands
-    results = hands.process(rgb_frame)
+    landmarker.process_frame(frame)
+    results = landmarker.get_latest_result()
 
-    if results.multi_hand_landmarks:
+    if results:
         pointers = []
-        for landmarks in results.multi_hand_landmarks:
-            # Draw hand landmarks on the image
-            mp_drawing = mp.solutions.drawing_utils
-            mp_drawing.draw_landmarks(frame, landmarks, mp_hands.HAND_CONNECTIONS)
-
+        draw_landmarks(frame, results)
+        for landmarks in results.hand_landmarks:
             if is_pinch(landmarks):
                 pointers.append(get_pinch_pointer(landmarks))
 
@@ -85,3 +81,4 @@ while cap.isOpened():
 # Release the VideoCapture and close all windows
 cap.release()
 cv2.destroyAllWindows()
+landmarker.close()

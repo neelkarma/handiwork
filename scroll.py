@@ -12,15 +12,17 @@ import textwrap
 import cv2
 import mediapipe as mp
 
-from common.hands import fraction_to_pixels, get_pinch_pointer, is_pinch
-
-mp_hands = mp.solutions.hands
+from common.hands import (
+    EasyHandLandmarker,
+    draw_landmarks,
+    fraction_to_pixels,
+    get_pinch_pointer,
+    is_pinch,
+)
 
 FRICTION_COEFF = 0.15
 
-hands = mp_hands.Hands(
-    max_num_hands=1, min_detection_confidence=0.7, min_tracking_confidence=0.7
-)
+landmarker = EasyHandLandmarker()
 
 
 # Initialize OpenCV
@@ -52,18 +54,13 @@ while cap.isOpened():
 
     frame = cv2.flip(frame, 1)
 
-    # Convert the BGR image to RGB
-    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
     # Process the frame with MediaPipe Hands
-    results = hands.process(rgb_frame)
+    landmarker.process_frame(frame)
+    results = landmarker.get_latest_result()
 
-    if results.multi_hand_landmarks:
-        for landmarks in results.multi_hand_landmarks:
-            # Draw hand landmarks on the image
-            mp_drawing = mp.solutions.drawing_utils
-            mp_drawing.draw_landmarks(frame, landmarks, mp_hands.HAND_CONNECTIONS)
-
+    if results:
+        draw_landmarks(frame, results)
+        for landmarks in results.hand_landmarks:
             pinching = is_pinch(landmarks)
 
             if pinching and not is_scrolling:  # is scrolling
